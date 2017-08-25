@@ -1,6 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
 
 entity muontracker is
      Port ( clk : in STD_LOGIC;
@@ -12,8 +12,9 @@ architecture Behavioral of muontracker is
 type arr_type_1 is array (0 to 7, 0 to 7) of std_logic;
 
 signal sample_array: arr_type_1;
-sample_array(0,0)<='1';
-sample_array(0,1)<='0';
+begin
+sample_array(0,0)<='0';
+sample_array(0,1)<='1';
 sample_array(0,2)<='0';
 sample_array(0,3)<='0';
 sample_array(0,4)<='0';
