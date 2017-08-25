@@ -9,12 +9,13 @@ entity muontracker is
                );
 end muontracker;
 architecture Behavioral of muontracker is
+
 type arr_type_1 is array (0 to 7, 0 to 7) of std_logic;
 
 signal sample_array: arr_type_1;
 begin
-sample_array(0,0)<='0';
-sample_array(0,1)<='1';
+sample_array(0,0)<='1';
+sample_array(0,1)<='0';
 sample_array(0,2)<='0';
 sample_array(0,3)<='0';
 sample_array(0,4)<='0';
@@ -78,5 +79,17 @@ sample_array(6,7)<='0';
 	sample_array(7,6)<='0';
 	sample_array(7,7)<='1';
 
+signal left_bound:std_logic;
+signal right_bound:std_logic;
+signal up_bound:std_logic;
+signal lower_bound:std_logic;
+
+left_bound<= sample_array(0,0) or sample_array(0,1) or sample_array(0,2) or sample_array(0,3) or sample_array(0,4) or sample_array(0,5) or sample_array(0,6) or sample_array(0,7);
+
+right_bound<= sample_array(7,0) or sample_array(7,1) or sample_array(7,2) or sample_array(7,3) or sample_array(7,4) or sample_array(7,5) or sample_array(7,6) or sample_array(7,7);
+
+lower_bound<= sample_array(0,0) or sample_array(1,0) or sample_array(2,0) or sample_array(3,0) or sample_array(4,0) or sample_array(5,0) or sample_array(6,0) or sample_array(7,0);
+
+up_bound<= sample_array(7,7) or sample_array(6,7) or sample_array(5,7) or sample_array(4,7) or sample_array(3,7) or sample_array(2,7) or sample_array(1,7) or sample_array(0,7);
 
 end Behavioral;
