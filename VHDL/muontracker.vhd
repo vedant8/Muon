@@ -28,8 +28,8 @@ signal hit:std_logic:='0';
 	signal count : integer := 0;
 	signal count_old : integer := 0;
 	signal matrix_size : integer := 7;
-	signal i : integer := hit_array_x(0); 
-	signal j : integer := hit_array_y(0);
+	signal i : integer := 0; 
+	signal j : integer := 0;
 	--variable u : integer := hit_array_x(0); 
 	--variable v : integer := hit_array_y(0);
 begin
@@ -148,8 +148,12 @@ end process;
 
 process(hit)
 
-
 	begin
+	
+	i<=hit_array_x(0);
+	j<=hit_array_y(0);
+
+
 
 		if (i>0 and j>0) then
 			if (sample_array(i-1,j-1)='1') then
