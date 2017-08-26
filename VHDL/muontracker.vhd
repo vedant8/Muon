@@ -227,7 +227,7 @@ L1: loop
 			if (sample_array(i-1,j-1)='1') then
 				count<=count+1;
 				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i-1;
+				hit_array_x(count)<=i-1;						--need continue (next) statements
 			end if;
 		end if;
 
