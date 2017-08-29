@@ -18,7 +18,7 @@ signal up_bound:std_logic;
 signal lower_bound:std_logic;
 signal ctr_left:integer:=8;
 signal ctr_right:integer:=8;
-signal ctr_up:integer:=8;
+signal ctr_upper:integer:=8;
 signal ctr_lower:integer:=8;
 signal hit_array_x:arr_type_2;
 signal hit_array_y:arr_type_2;
@@ -128,7 +128,7 @@ if hit='0' then
 		end if;
 		ctr_right<=ctr_right+1;
 
-	elsif upper_bound='1' then
+	elsif up_bound='1' then
 		if sample_array(ctr_upper,7) = '1' then
 			hit_array_y(0)<=7;
 			hit_array_x(0)<=ctr_upper;
@@ -143,8 +143,9 @@ if hit='0' then
 			hit<='1';
 		end if;
 		ctr_lower<=ctr_lower+1;	
-end if		
-end process
+end if;
+end if;	
+end process;
 
 
 process(hit)
