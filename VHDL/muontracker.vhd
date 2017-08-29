@@ -111,39 +111,40 @@ up_bound<= sample_array(7,7) or sample_array(6,7) or sample_array(5,7) or sample
 --first hit on left border
 process(clk)
 begin
-if left_bound='1' then
-	if sample_array(0,ctr_left) = '1' then
-		hit_array_x(0)<=0;
-		hit_array_y(0)<=ctr_left;
-		hit<='1';
-	end if;
-	ctr_left<=ctr_left+1;
+if hit='0' then
+	if left_bound='1' then
+		if sample_array(0,ctr_left) = '1' then
+			hit_array_x(0)<=0;
+			hit_array_y(0)<=ctr_left;
+			hit<='1';
+		end if;
+		ctr_left<=ctr_left+1;
 
-elsif right_bound='1' then
-	if sample_array(7,ctr_right) = '1' then
-		hit_array_x(0)<=7;
-		hit_array_y(0)<=ctr_right;
-		hit<='1';
-	end if;
-	ctr_right<=ctr_right+1;
+	elsif right_bound='1' then
+		if sample_array(7,ctr_right) = '1' then
+			hit_array_x(0)<=7;
+			hit_array_y(0)<=ctr_right;
+			hit<='1';
+		end if;
+		ctr_right<=ctr_right+1;
 
-elsif up_bound='1' then
-	if sample_array(ctr_up,7) = '1' then
-		hit_array_y(0)<=7;
-		hit_array_x(0)<=ctr_up;
-		hit<='1';
-	end if;
-	ctr_up<=ctr_up+1;
+	elsif upper_bound='1' then
+		if sample_array(ctr_upper,7) = '1' then
+			hit_array_y(0)<=7;
+			hit_array_x(0)<=ctr_upper;
+			hit<='1';
+		end if;
+		ctr_upper<=ctr_upper+1;
 
-elsif lower_bound='1' then
-	if sample_array(ctr_lower,0) = '1' then
-		hit_array_y(0)<=0;
-		hit_array_x(0)<=ctr_lower;
-		hit<='1';
-	end if;
-	ctr_lower<=ctr_lower+1;	
-end if;
-end process;
+	elsif lower_bound='1' then
+		if sample_array(ctr_lower,0) = '1' then
+			hit_array_y(0)<=0;
+			hit_array_x(0)<=ctr_lower;
+			hit<='1';
+		end if;
+		ctr_lower<=ctr_lower+1;	
+end if		
+end process
 
 
 process(hit)
