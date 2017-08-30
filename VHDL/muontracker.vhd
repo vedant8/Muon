@@ -16,10 +16,10 @@ signal left_bound:std_logic;
 signal right_bound:std_logic;
 signal up_bound:std_logic;
 signal lower_bound:std_logic;
-signal ctr_left:integer:=8;
-signal ctr_right:integer:=8;
-signal ctr_upper:integer:=8;
-signal ctr_lower:integer:=8;
+signal ctr_left:integer:=0;
+signal ctr_right:integer:=0;
+signal ctr_upper:integer:=0;
+signal ctr_lower:integer:=0;
 signal hit_array_x:arr_type_2;
 signal hit_array_y:arr_type_2;
 signal sample_array: arr_type_1;
@@ -34,13 +34,13 @@ signal hit:std_logic:='0';
 	--variable v : integer := hit_array_y(0);
 begin
 --populating the matrix
-sample_array(0,0)<='1';
+sample_array(0,0)<='0';
 sample_array(0,1)<='0';
 sample_array(0,2)<='0';
 sample_array(0,3)<='0';
 sample_array(0,4)<='0';
 sample_array(0,5)<='0';
-sample_array(0,6)<='0';
+sample_array(0,6)<='1';
 sample_array(0,7)<='0';
 	sample_array(1,0)<='0';
 	sample_array(1,1)<='1';
@@ -146,154 +146,5 @@ if hit='0' then
 end if;
 end if;	
 end process;
-
-
-process(hit)
-
-	begin
-	
-	i<=hit_array_x(0);
-	j<=hit_array_y(0);
-
-
-
-		if (i>0 and j>0) then
-			if (sample_array(i-1,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i-1;
-			end if;
-		end if;
-
-		if (j>0) then
-			if (sample_array(i,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i;
-			end if;
-		end if;
-
-		if (i<matrix_size and j>0) then
-			if (sample_array(i+1,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (i<matrix_size) then
-			if (sample_array(i+1,j)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (i<matrix_size and j<matrix_size) then
-			if (sample_array(i+1,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (j<matrix_size) then
-			if (sample_array(i,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i;
-			end if;
-		end if;
-
-		if (i>0 and j<matrix_size) then
-			if (sample_array(i-1,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i-1;
-			end if;
-		end if;
-
-		if (i>0) then
-			if (sample_array(i-1,j)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j;
-				hit_array_x(count)<=i-1;
-			end if;
-		end if;
-
-
-L1: loop
-
-
-		if (i>0 and j>0 and i-1/=hit_array_x(count) and j-1/=hit_array_y(count)) then
-			if (sample_array(i-1,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i-1;						--need continue (next) statements
-			end if;
-		end if;
-
-		if (j>0 and i/=hit_array_x(count) and j-1/=hit_array_y(count)) then
-			if (sample_array(i,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i;
-			end if;
-		end if;
-
-		if (i<matrix_size and j>0 and i+1/=hit_array_x(count) and j-1/=hit_array_y(count)) then
-			if (sample_array(i+1,j-1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j-1;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (i<matrix_size and i+1/=hit_array_x(count) and j/=hit_array_y(count)) then
-			if (sample_array(i+1,j)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (i<matrix_size and j<matrix_size and i+1/=hit_array_x(count) and j+1/=hit_array_y(count)) then
-			if (sample_array(i+1,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i+1;
-			end if;
-		end if;
-
-		if (j<matrix_size and i/=hit_array_x(count) and j+1/=hit_array_y(count)) then
-			if (sample_array(i,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i;
-			end if;
-		end if;
-
-		if (i>0 and j<matrix_size and i-1/=hit_array_x(count) and j+1/=hit_array_y(count)) then
-			if (sample_array(i-1,j+1)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j+1;
-				hit_array_x(count)<=i-1;
-			end if;
-		end if;
-
-		if (i>0 and i-1/=hit_array_x(count) and j/=hit_array_y(count)) then
-			if (sample_array(i-1,j)='1') then
-				count<=count+1;
-				hit_array_y(count)<=j;
-				hit_array_x(count)<=i-1;
-			end if;
-		end if;
-
-		exit L1;									--Loop gets here only if it was the last point in the track
-
-end loop;
-hit<='0';
-end process;
-
 
 end Behavioral;
