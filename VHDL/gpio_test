@@ -1,0 +1,765 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.numeric_std.ALL;
+
+entity gpio_test is
+     Port ( clk : in STD_LOGIC;
+              start :in STD_LOGIC;
+				  reset: in STD_LOGIC;
+				  reset_2:in STD_LOGIC;
+                input: in STD_LOGIC_VECTOR (9 downto 0);
+					 ssout5 : out STD_LOGIC_VECTOR(6 downto 0);
+					 ssout4 : out STD_LOGIC_VECTOR(6 downto 0);
+					 ssout3 : out STD_LOGIC_VECTOR(6 downto 0);
+					 ssout2 : out STD_LOGIC_VECTOR(6 downto 0);
+					 readout: in STD_LOGIC_VECTOR (9 downto 0);
+					 ledout : out STD_LOGIC_VECTOR (9 downto 0);
+					 led: out STD_LOGIC_VECTOR(3 downto 0);
+					 hit_led:out STD_LOGIC_VECTOR(3 downto 0);
+					 flag_led:out STD_LOGIC_VECTOR(3 downto 0);
+                output : out STD_LOGIC_VECTOR (9 downto 0)
+                );
+end gpio_test;
+
+architecture Behavioral of gpio_test is
+type arr_type_1 is array (0 to 9) of std_logic_VECTOR(9 downto 0);
+signal input_array: arr_type_1;
+type arr_type_2 is array (0 to 11,0 to 11) of std_logic;
+signal sample_array: arr_type_2;
+type arr_type_3 is array (0 to 31) of integer range 0 to 7;
+COMPONENT sevseg
+       PORT(  clk          : in     STD_LOGIC;
+						  counter: in integer;
+                    output1 : out  STD_LOGIC;
+                    output2 : out  STD_LOGIC;
+                    output3 : out  STD_LOGIC;
+                    output4 : out  STD_LOGIC;
+                    output5 : out  STD_LOGIC;
+                    output6 : out  STD_LOGIC;
+                    output7 : out  STD_LOGIC);
+END COMPONENT;
+signal counter1: integer :=0;
+signal prescaler:std_LOGIC_VECTOR(15 downto 0);
+signal clk_1k:std_LOGIC;
+signal s_1:std_LOGIC_VECTOR(9 downto 0);
+signal s_flag:std_LOGIC;
+signal s_flag_2:std_LOGIC;
+
+signal matrix_size : integer := 10;
+	
+signal sample: integer range 0 to 9;
+signal fanout0:std_LOGIC_VECTOR(9 downto 0);
+signal fanout1:std_LOGIC_VECTOR(9 downto 0);
+signal fanout2:std_LOGIC_VECTOR(9 downto 0);
+signal fanout3:std_LOGIC_VECTOR(9 downto 0);
+signal fanout4:std_LOGIC_VECTOR(9 downto 0);
+signal fanout5:std_LOGIC_VECTOR(9 downto 0);
+signal fanout6:std_LOGIC_VECTOR(9 downto 0);
+signal fanout7:std_LOGIC_VECTOR(9 downto 0);
+signal fanout8:std_LOGIC_VECTOR(9 downto 0);
+signal fanout9:std_LOGIC_VECTOR(9 downto 0);
+
+signal left_bound:std_logic;
+signal right_bound:std_logic;
+signal up_bound:std_logic;
+signal lower_bound:std_logic;
+signal ctr_left:integer:=0;
+signal ctr_right:integer:=0;
+signal ctr_upper:integer:=0;
+signal ctr_lower:integer:=0;
+signal hit:std_logic;
+signal track_flag_1:std_logic;
+signal track_flag_2:integer:=0;
+signal hit_array_x:arr_type_3;
+signal hit_array_y:arr_type_3;
+signal path_dir_array:arr_type_3;
+signal path_dir_array2:integer:=0;
+signal x_n:integer:=1;
+signal y_n:integer:=1;
+signal x_n1:integer:=1;
+signal y_n1:integer:=1;
+signal n:integer:=1;
+
+attribute preserve: boolean;
+attribute preserve of s_flag: signal is true;
+--attribute preserve: boolean;
+--attribute preserve of hit: signal is true;
+--
+--attribute syn_keep_s2: boolean;
+--attribute syn_keep_s2 of s_flag_2: signal is true;
+attribute syn_keep_1: boolean;
+attribute syn_keep_1 of track_flag_1: signal is true;
+--attribute syn_keep_2: boolean;
+--attribute syn_keep_2 of track_flag_2: signal is true;
+begin 
+U1:sevseg PORT MAP(clk=>clk, counter=>x_n, output1=> ssout5(0),output2=> ssout5(1), output3=> ssout5(2), output4=> ssout5(3), output5=> ssout5(4), output6=> ssout5(5), output7=> ssout5(6) );
+U2:sevseg PORT MAP(clk=>clk, counter=>y_n, output1=> ssout4(0),output2=> ssout4(1), output3=> ssout4(2), output4=> ssout4(3), output5=> ssout4(4), output6=> ssout4(5), output7=> ssout4(6) );
+U3:sevseg PORT MAP(clk=>clk, counter=>x_n1, output1=> ssout3(0),output2=> ssout3(1), output3=> ssout3(2), output4=> ssout3(3), output5=> ssout3(4), output6=> ssout3(5), output7=> ssout3(6) );
+U4:sevseg PORT MAP(clk=>clk, counter=>y_n1, output1=> ssout2(0),output2=> ssout2(1), output3=> ssout2(2), output4=> ssout2(3), output5=> ssout2(4), output6=> ssout2(5), output7=> ssout2(6) );
+        
+
+with sample Select
+       output<= "0000000001" when 0,   
+                "0000000010" when 1, 
+                "0000000100" when 2,
+                "0000001000" when 3,
+                "0000010000" when 4,
+                "0000100000" when 5,
+                "0001000000" when 6, 
+                "0010000000" when 7, 
+                "0100000000" when 8,
+                "1000000000" when 9,         
+                "0000000000" when others;
+					 
+
+process(clk)
+begin
+
+if hit='0' and s_flag_2='1' then
+led(0)<=left_bound;
+led(1)<=right_bound;
+led(2)<=up_bound;
+led(3)<=lower_bound;
+	if left_bound='1' then
+	if sample_array(1,ctr_left) = '1' then
+			x_n<=1;
+			y_n<=ctr_left;
+			hit<='1';
+			
+			hit_led<="0001";
+		
+		else
+		ctr_left<=ctr_left+1;
+		end if;
+	
+	elsif right_bound='1' then
+		if sample_array(10,ctr_right) = '1' then
+			x_n<=10;
+			y_n<=ctr_right;
+			hit<='1';
+			--counter1<=ctr_right;
+			hit_led<="0010";
+		
+		else
+		ctr_right<=ctr_right+1;
+		end if;
+	elsif up_bound='1' then
+		if sample_array(ctr_upper,10) = '1' then
+			y_n<=10;
+			x_n<=ctr_upper;
+			hit<='1';
+			hit_led<="0100";
+			--counter1<=ctr_upper;
+			
+			else
+			ctr_upper<=ctr_upper+1;
+			end if;
+		
+		
+	elsif lower_bound='1' then
+		if sample_array(ctr_lower,1) = '1' then
+			y_n<=1;
+			x_n<=ctr_lower;
+			hit<='1';
+			--counter1<=ctr_lower;
+			hit_led<="1000";
+		else
+		ctr_lower<=ctr_lower+1;	
+		end if;
+		
+end if;
+end if;
+if reset = '0' then
+hit<='0';
+		
+ctr_left<=0;
+ctr_lower<=0;
+ctr_right<=0;
+ctr_upper<=0;
+counter1<=0;
+end if;	
+end process;
+
+process(clk,input_array, s_flag)
+begin
+if s_flag ='1' and s_flag_2 ='0' then
+--fanout0<=input_array(0);
+sample_array(1,1)<=fanout0(0);
+sample_array(1,2)<=fanout0(1);
+sample_array(1,3)<=fanout0(2);
+sample_array(1,4)<=fanout0(3);
+sample_array(1,5)<=fanout0(4);
+sample_array(1,6)<=fanout0(5);
+sample_array(1,7)<=fanout0(6);
+sample_array(1,8)<=fanout0(7);
+sample_array(1,9)<=fanout0(8);
+sample_array(1,10)<=fanout0(9);
+
+--fanout1<=input_array(1);
+sample_array(2,1)<=fanout1(0);
+sample_array(2,2)<=fanout1(1);
+sample_array(2,3)<=fanout1(2);
+sample_array(2,4)<=fanout1(3);
+sample_array(2,5)<=fanout1(4);
+sample_array(2,6)<=fanout1(5);
+sample_array(2,7)<=fanout1(6);
+sample_array(2,8)<=fanout1(7);
+sample_array(2,9)<=fanout1(8);
+sample_array(2,10)<=fanout1(9);
+--fanout2<=input_array(2);
+sample_array(3,1)<=fanout2(0);
+sample_array(3,2)<=fanout2(1);
+sample_array(3,3)<=fanout2(2);
+sample_array(3,4)<=fanout2(3);
+sample_array(3,5)<=fanout2(4);
+sample_array(3,6)<=fanout2(5);
+sample_array(3,7)<=fanout2(6);
+sample_array(3,8)<=fanout2(7);
+sample_array(3,9)<=fanout2(8);
+sample_array(3,10)<=fanout2(9);
+
+--fanout3<=input_array(3);
+sample_array(4,1)<=fanout3(0);
+sample_array(4,2)<=fanout3(1);
+sample_array(4,3)<=fanout3(2);
+sample_array(4,4)<=fanout3(3);
+sample_array(4,5)<=fanout3(4);
+sample_array(4,6)<=fanout3(5);
+sample_array(4,7)<=fanout3(6);
+sample_array(4,8)<=fanout3(7);
+sample_array(4,9)<=fanout3(8);
+sample_array(4,10)<=fanout3(9);
+--fanout4<=input_array(4);
+sample_array(5,1)<=fanout4(0);
+sample_array(5,2)<=fanout4(1);
+sample_array(5,3)<=fanout4(2);
+sample_array(5,4)<=fanout4(3);
+sample_array(5,5)<=fanout4(4);
+sample_array(5,6)<=fanout4(5);
+sample_array(5,7)<=fanout4(6);
+sample_array(5,8)<=fanout4(7);
+sample_array(5,9)<=fanout4(8);
+sample_array(5,10)<=fanout4(9);
+--fanout5<=input_array(5);
+sample_array(6,1)<=fanout5(0);
+sample_array(6,2)<=fanout5(1);
+sample_array(6,3)<=fanout5(2);
+sample_array(6,4)<=fanout5(3);
+sample_array(6,5)<=fanout5(4);
+sample_array(6,6)<=fanout5(5);
+sample_array(6,7)<=fanout5(6);
+sample_array(6,8)<=fanout5(7);
+sample_array(6,9)<=fanout5(8);
+sample_array(6,10)<=fanout5(9);
+
+--fanout6<=input_array(6);
+sample_array(7,1)<=fanout6(0);
+sample_array(7,2)<=fanout6(1);
+sample_array(7,3)<=fanout6(2);
+sample_array(7,4)<=fanout6(3);
+sample_array(7,5)<=fanout6(4);
+sample_array(7,6)<=fanout6(5);
+sample_array(7,7)<=fanout6(6);
+sample_array(7,8)<=fanout6(7);
+sample_array(7,9)<=fanout6(8);
+sample_array(7,10)<=fanout6(9);
+
+--fanout7<=input_array(7);
+sample_array(8,1)<=fanout7(0);
+sample_array(8,2)<=fanout7(1);
+sample_array(8,3)<=fanout7(2);
+sample_array(8,4)<=fanout7(3);
+sample_array(8,5)<=fanout7(4);
+sample_array(8,6)<=fanout7(5);
+sample_array(8,7)<=fanout7(6);
+sample_array(8,8)<=fanout7(7);
+sample_array(8,9)<=fanout7(8);
+sample_array(8,10)<=fanout7(9);
+
+--fanout8<=input_array(8);
+sample_array(9,1)<=fanout8(0);
+sample_array(9,2)<=fanout8(1);
+sample_array(9,3)<=fanout8(2);
+sample_array(9,4)<=fanout8(3);
+sample_array(9,5)<=fanout8(4);
+sample_array(9,6)<=fanout8(5);
+sample_array(9,7)<=fanout8(6);
+sample_array(9,8)<=fanout8(7);
+sample_array(9,9)<=fanout8(8);
+sample_array(9,10)<=fanout8(9);
+
+--fanout9<=input_array(9);
+sample_array(10,1)<=fanout9(0);
+sample_array(10,2)<=fanout9(1);
+sample_array(10,3)<=fanout9(2);
+sample_array(10,4)<=fanout9(3);
+sample_array(10,5)<=fanout9(4);
+sample_array(10,6)<=fanout9(5);
+sample_array(10,7)<=fanout9(6);
+sample_array(10,8)<=fanout9(7);
+sample_array(10,9)<=fanout9(8);
+sample_array(10,10)<=fanout9(9);
+
+left_bound<= fanout0(1) or fanout0(2) or fanout0(3) or fanout0(4) or fanout0(5) or fanout0(6) or fanout0(7) or fanout0(8) or fanout0(9) or fanout0(0);
+right_bound<= fanout9(1) or fanout9(2) or fanout9(3) or fanout9(4) or fanout9(5) or fanout9(6) or fanout9(7) or fanout9(8) or fanout9(9) or fanout9(0);
+up_bound<=fanout0(9) or fanout1(9) or fanout2(9) or fanout3(9) or fanout4(9) or fanout5(9) or fanout6(9) or fanout7(9) or fanout8(9) or fanout9(9);		 
+lower_bound<=fanout0(0) or fanout1(0) or fanout2(0) or fanout3(0) or fanout4(0) or fanout5(0) or fanout6(0) or fanout7(0) or fanout8(0) or fanout9(0);		 
+
+s_flag_2<='1';
+
+end if;
+if reset='0' then
+		
+		sample_array(1,1)<='0';
+	s_flag_2<='0';
+	left_bound<='0';
+		right_bound<='0';
+		lower_bound<='0';
+		up_bound<='0';
+--fanout0<="0000000000";
+--fanout1<="0000000000";
+--fanout2<="0000000000";
+--fanout3<="0000000000";
+--fanout4<="0000000000";
+--fanout5<="0000000000";
+--fanout6<="0000000000";
+--fanout7<="0000000000";
+--fanout8<="0000000000";
+--fanout9<="0000000000";
+sample_array(1,2)<='0';
+sample_array(1,3)<='0';
+sample_array(1,4)<='0';
+sample_array(1,5)<='0';
+sample_array(1,6)<='0';
+sample_array(1,7)<='0';
+sample_array(1,8)<='0';
+sample_array(1,9)<='0';
+sample_array(1,10)<='0';
+sample_array(2,1)<='0';
+sample_array(2,2)<='0';
+sample_array(2,3)<='0';
+sample_array(2,4)<='0';
+sample_array(2,5)<='0';
+sample_array(2,6)<='0';
+sample_array(2,7)<='0';
+sample_array(2,8)<='0';
+sample_array(2,9)<='0';
+sample_array(2,10)<='0';
+sample_array(3,1)<='0';
+sample_array(3,2)<='0';
+sample_array(3,3)<='0';
+sample_array(3,4)<='0';
+sample_array(3,5)<='0';
+sample_array(3,6)<='0';
+sample_array(3,7)<='0';
+sample_array(3,8)<='0';
+sample_array(3,9)<='0';
+sample_array(3,10)<='0';
+
+sample_array(4,1)<='0';
+sample_array(4,2)<='0';
+sample_array(4,3)<='0';
+sample_array(4,4)<='0';
+sample_array(4,5)<='0';
+sample_array(4,6)<='0';
+sample_array(4,7)<='0';
+sample_array(4,8)<='0';
+sample_array(4,9)<='0';
+sample_array(4,10)<='0';
+sample_array(5,1)<='0';
+sample_array(5,2)<='0';
+sample_array(5,3)<='0';
+sample_array(5,4)<='0';
+sample_array(5,5)<='0';
+sample_array(5,6)<='0';
+sample_array(5,7)<='0';
+sample_array(5,8)<='0';
+sample_array(5,9)<='0';
+sample_array(5,10)<='0';
+sample_array(6,1)<='0';
+sample_array(6,2)<='0';
+sample_array(6,3)<='0';
+sample_array(6,4)<='0';
+sample_array(6,5)<='0';
+sample_array(6,6)<='0';
+sample_array(6,7)<='0';
+sample_array(6,8)<='0';
+sample_array(6,9)<='0';
+sample_array(6,10)<='0';
+
+sample_array(7,1)<='0';
+sample_array(7,2)<='0';
+sample_array(7,3)<='0';
+sample_array(7,4)<='0';
+sample_array(7,5)<='0';
+sample_array(7,6)<='0';
+sample_array(7,7)<='0';
+sample_array(7,8)<='0';
+sample_array(7,9)<='0';
+sample_array(7,10)<='0';
+
+sample_array(8,1)<='0';
+sample_array(8,2)<='0';
+sample_array(8,3)<='0';
+sample_array(8,4)<='0';
+sample_array(8,5)<='0';
+sample_array(8,6)<='0';
+sample_array(8,7)<='0';
+sample_array(8,8)<='0';
+sample_array(8,9)<='0';
+sample_array(8,10)<='0';
+
+sample_array(9,1)<='0';
+sample_array(9,2)<='0';
+sample_array(9,3)<='0';
+sample_array(9,4)<='0';
+sample_array(9,5)<='0';
+sample_array(9,6)<='0';
+sample_array(9,7)<='0';
+sample_array(9,8)<='0';
+sample_array(9,9)<='0';
+sample_array(9,10)<='0';
+
+sample_array(10,1)<='0';
+sample_array(10,2)<='0';
+sample_array(10,3)<='0';
+sample_array(10,4)<='0';
+sample_array(10,5)<='0';
+sample_array(10,6)<='0';
+sample_array(10,7)<='0';
+sample_array(10,8)<='0';
+sample_array(10,9)<='0';
+sample_array(10,10)<='0';
+		end if;	
+end process;
+					
+process(input,input_array)
+begin
+if s_flag='1' then
+if input(0)='1' then
+ledout<=input_array(0);
+elsif input(1)='1' then
+ledout<=input_array(1);
+elsif input(2)='1' then
+ledout<=input_array(2);
+elsif input(3)='1' then
+ledout<=input_array(3);
+elsif input(4)='1' then
+ledout<=input_array(4);
+elsif input(5)='1' then
+ledout<=input_array(5);
+elsif input(6)='1' then
+ledout<=input_array(6);
+elsif input(7)='1' then
+ledout<=input_array(7);
+elsif input(8)='1' then
+ledout<=input_array(8);
+elsif input(9)='1' then
+ledout<=input_array(9);
+else
+ledout<="0000000000";
+end if;
+end if;
+end process;
+					 
+process(clk)--sampling rate prescaler
+begin
+
+
+
+if clk'event and clk='1' and start='1' then
+        if prescaler = X"C350" then     -- 50 000 in hex
+        prescaler   <= (others => '0');
+        clk_1k   <= not clk_1k;
+      else
+        prescaler <= prescaler + 1;
+      end if;
+      end if;
+end process;			 
+	
+process(clk_1k,readout)
+begin
+if clk_1k'event and clk_1k='1' then 
+   if s_flag='0' then
+
+		if s_1=X"3E8" then --1000 in hex
+			s_1<=(others => '0');
+			s_flag<='1';
+			fanout0<=input_array(0);
+			fanout1<=input_array(1);
+			fanout2<=input_array(2);
+			fanout3<=input_array(3);
+			fanout4<=input_array(4);
+			fanout5<=input_array(5);
+			fanout6<=input_array(6);
+			fanout7<=input_array(7);
+			fanout8<=input_array(8);
+			fanout9<=input_array(9);
+			else
+			s_1 <= s_1 + 1;
+			if (sample<10) then
+			input_array(sample)<=input_array(sample) OR readout;
+
+				sample<=sample+1;
+			 else
+			 sample<=0;
+			 end if;
+			end if;
+		end if;
+
+	end if;
+
+if reset='0' then
+		s_flag<='0';
+		s_1<="0000000000";
+		end if;	
+end process;
+							 
+process(clk)
+begin 
+hit_array_x(0) <= x_n;
+hit_array_y(0) <= y_n;
+hit_array_x(1) <=x_n1;
+hit_array_y(1) <=y_n1; 
+flag_led(0)<=track_flag_1;
+if hit='1' and track_flag_1='0' and track_flag_2=0 then
+	  if x_n=1 then
+		if y_n=1 then
+			 if sample_array(x_n+1,y_n)= '1' then
+			 	x_n1<=x_n+1;
+			 	y_n1<=y_n;
+			 	path_dir_array(0)<=0;
+			 	track_flag_1<='1';
+			 elsif	sample_array(x_n+1,y_n+1)= '1' then
+			 	x_n1<=x_n+1;
+			 	y_n1<=y_n+1;
+			 	path_dir_array(0)<=1;
+			 	track_flag_1<='1';
+			 elsif sample_array(x_n,y_n+1)= '1' then
+			 	x_n1<=x_n;
+			 	y_n1<=y_n+1;
+			 	path_dir_array(0)<=2;
+			 	track_flag_1<='1';
+			 end if;	
+		elsif y_n=matrix_size then
+			 if sample_array(x_n,y_n)= '1' then
+			 	x_n1<=x_n;
+			 	y_n1<=y_n;
+			 	path_dir_array(0)<=3;
+			 	track_flag_1<='1';
+			 elsif	sample_array(x_n+1,y_n-1)= '1' then
+			 	x_n1<=x_n+1;
+			 	y_n1<=y_n-1;
+			 	path_dir_array(0)<=4;
+			 	track_flag_1<='1';
+			 elsif sample_array(x_n+1,y_n)= '1' then
+			 	x_n1<=x_n+1;
+			 	y_n1<=y_n;
+			 	path_dir_array(0)<=0;
+			 	track_flag_1<='1';
+			 end if	;
+		else 
+--			 if sample_array(1,hit_array_y(0)+1)='1' then
+--			  x_n1<=1;
+--			  y_n1<=hit_array_y(0)+1;
+--			  path_dir_array(0)<=2;
+--			  track_flag_1<='1';
+			 if sample_array(2,hit_array_y(0)+1)='1' then
+			  x_n1<=2;
+			  y_n1<=hit_array_y(0)+1;
+			  path_dir_array(0)<=1;
+			  track_flag_1<='1';
+			 elsif sample_array(2,hit_array_y(0))='1' then
+			  x_n1<=2;
+			  y_n1<=hit_array_y(0);
+			  path_dir_array(0)<=0; 
+			  track_flag_1<='1';
+			 elsif sample_array(2,hit_array_y(0)-1)='1' then
+			  x_n1<=2;
+			  y_n1<=hit_array_y(0)-1;
+			  track_flag_1<='1';
+			  path_dir_array(0)<=4;
+--			 elsif sample_array(1,hit_array_y(0)-1)='1' then
+--			  x_n1<=1;
+--			  y_n1<=hit_array_y(0)-1;
+--			  path_dir_array(0)<=3;
+--			  track_flag_1<='1';
+			 end if;
+		end if;
+	  elsif	 x_n=10 then  
+		    if y_n=1 then
+				 if sample_array(x_n-1,y_n)= '1' then
+				 	x_n1<=x_n-1;
+				 	y_n1<=y_n;
+				 	path_dir_array(0)<=6;
+				 	track_flag_1<='1';
+				 elsif	sample_array(x_n-1,y_n+1)= '1' then
+				 	x_n1<=x_n-1;
+				 	y_n1<=y_n+1;
+				 	path_dir_array(0)<=7;
+				 	track_flag_1<='1';
+				 elsif sample_array(x_n,y_n+1)= '1' then
+				 	x_n1<=x_n;
+				 	y_n1<=y_n+1;
+				 	path_dir_array(0)<=2;
+				 	track_flag_1<='1';
+				 end if;	
+		    elsif y_n=matrix_size then
+				 if sample_array(x_n,y_n-1)= '1' then
+				 	x_n1<=x_n;
+				 	y_n1<=y_n-1;
+				 	path_dir_array(0)<=3;
+				 	track_flag_1<='1';
+				 elsif	sample_array(x_n-1,y_n-1)= '1' then
+				 	x_n1<=x_n-1;
+				 	y_n1<=y_n-1;
+				 	path_dir_array(0)<=5;
+				 	track_flag_1<='1';
+				 elsif sample_array(x_n-1,y_n)= '1' then
+				 	x_n1<=x_n-1;
+				 	y_n1<=y_n;
+				 	path_dir_array(0)<=6;
+				 	track_flag_1<='1';
+				 end if	;
+		     else
+--				 if sample_array(matrix_size,hit_array_y(0)+1)='1' then
+--				  x_n1<=matrix_size;
+--				  y_n1<=hit_array_y(0)+1;
+--				  path_dir_array(0)<=2;
+--				  track_flag_1<='1';
+				 if sample_array(matrix_size-1,hit_array_y(0)+1)='1' then
+				  x_n1<=matrix_size-1;
+				  y_n1<=hit_array_y(0)+1;
+				  path_dir_array(0)<=7;
+				  track_flag_1<='1';
+				 elsif sample_array(matrix_size-1,hit_array_y(0))='1' then
+				  x_n1<=matrix_size-1;
+				  y_n1<=hit_array_y(0);
+				  path_dir_array(0)<=6; 
+				  track_flag_1<='1';
+				 elsif sample_array(matrix_size-1,hit_array_y(0)-1)='1' then
+				  x_n1<=matrix_size-1;
+				  y_n1<=hit_array_y(0)-1;
+				  path_dir_array(0)<=5;
+				  track_flag_1<='1';
+--				 elsif sample_array(matrix_size,hit_array_y(0)-1)='1' then
+--				  x_n1<=matrix_size;
+--				  y_n1<=hit_array_y(0)-1;
+--				  path_dir_array(0)<=3;
+--				  track_flag_1<='1';
+				 end if;
+			end if; 
+		else
+			if y_n=1 then
+--				 if sample_array(hit_array_x(0)-1,hit_array_y(0))= '1' then
+--				 	x_n1<=hit_array_x(0)-1;
+--				 	y_n1<=hit_array_y(0);
+--				 	path_dir_array(0)<=6;
+--				 	track_flag_1<='1';
+				 if sample_array(hit_array_x(0)-1,hit_array_y(0)+1)= '1' then
+				 	x_n1<=hit_array_x(0)-1;
+				 	y_n1<=hit_array_y(0)+1;
+				 	path_dir_array(0)<=7;
+				 	track_flag_1<='1';
+				 elsif sample_array(hit_array_x(0),hit_array_y(0)+1)= '1' then
+				 	x_n1<=hit_array_x(0);
+				 	y_n1<=hit_array_y(0)+1;
+				 	path_dir_array(0)<=2;
+				 	track_flag_1<='1';
+				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0)+1)= '1' then
+				 	x_n1<=hit_array_x(0)+1;
+				 	y_n1<=hit_array_y(0)+1;
+				 	path_dir_array(0)<=1;
+				 	track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0))= '1' then
+--				 	x_n1<=hit_array_x(0)+1;
+--				 	y_n1<=hit_array_y(0);
+--				 	path_dir_array(0)<=0;
+--				 	track_flag_1<='1';	
+				 end if;	
+		    elsif y_n=matrix_size then
+				 if sample_array(hit_array_x(0),hit_array_y(0)-1)= '1' then
+				 	x_n1<=hit_array_x(0);
+				 	y_n1<=hit_array_y(0)-1;
+				 	path_dir_array(0)<=3;
+				 	track_flag_1<='1';
+				 elsif	sample_array(hit_array_x(0)-1,hit_array_y(0)-1)= '1' then
+				 	x_n1<=hit_array_x(0)-1;
+				 	y_n1<=hit_array_y(0)-1;
+				 	path_dir_array(0)<=5;
+				 	track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)-1,hit_array_y(0))= '1' then
+--				 	x_n1<=hit_array_x(0)-1;
+--				 	y_n1<=hit_array_y(0);
+--				 	path_dir_array(0)<=6;
+--				 	track_flag_1<='1';
+				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0)-1)= '1' then
+				 	x_n1<=hit_array_x(0)+1;
+				 	y_n1<=hit_array_y(0)-1;
+				 	path_dir_array(0)<=4;
+				 	track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0)-1)= '1' then
+--				 	x_n1<=hit_array_x(0)+1;
+--				 	y_n1<=hit_array_y(0)-1;
+--				 	path_dir_array(0)<=0;
+--				 	track_flag_1<='1';		
+				 end if	;
+		     else
+--				 if sample_array(hit_array_x(0),hit_array_y(0)+1)='1' then
+--				  x_n1<=hit_array_x(0);
+--				  y_n1<=hit_array_y(0)+1;
+--				  path_dir_array(0)<=2;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)-1,hit_array_y(0)+1)='1' then
+--				  x_n1<=hit_array_x(0)-1;
+--				  y_n1<=hit_array_y(0)+1;
+--				  path_dir_array(0)<=7;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)-1,hit_array_y(0))='1' then
+--				  x_n1<=hit_array_x(0)-1;
+--				  y_n1<=hit_array_y(0);
+--				  path_dir_array(0)<=6; 
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)-1,hit_array_y(0)-1)='1' then
+--				  x_n1<=hit_array_x(0)-1;
+--				  y_n1<=hit_array_y(0)-1;
+--				  path_dir_array(0)<=5;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0),hit_array_y(0)-1)='1' then
+--				  x_n1<=hit_array_x(0);
+--				  y_n1<=hit_array_y(0)-1;
+--				  path_dir_array(0)<=3;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0)-1)='1' then
+--				  x_n1<=hit_array_x(0)+1;
+--				  y_n1<=hit_array_y(0)-1;
+--				  path_dir_array(0)<=4;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0))='1' then
+--				  x_n1<=hit_array_x(0)+1;
+--				  y_n1<=hit_array_y(0);
+--				  path_dir_array(0)<=0;
+--				  track_flag_1<='1';
+--				 elsif sample_array(hit_array_x(0)+1,hit_array_y(0)+1)='1' then
+--				  x_n1<=hit_array_x(0)+1;
+--				  y_n1<=hit_array_y(0)+1;
+--				  path_dir_array(0)<=1;
+--				  track_flag_1<='1'; 
+--				 elsif sample_array(hit_array_x(0),hit_array_y(0)+1)='1' then
+--				  x_n1<=hit_array_x(0);
+--				  y_n1<=hit_array_y(0)+1;
+--				  path_dir_array(0)<=2;
+--				  track_flag_1<='1';    
+--				 end if;
+		end if; 
+		      	 				
+	end if;
+	end if;
+	if reset_2='0' then
+		track_flag_1<='0';
+		
+		end if;	
+		
+end process;	
+end Behavioral;
