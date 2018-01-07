@@ -1,7 +1,8 @@
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
- 
+ use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.numeric_std.ALL;
  
 ENTITY uart IS
 Port ( clk : in STD_LOGIC;
@@ -50,7 +51,7 @@ signal O_rxSig:std_logic :='0';
  signal last_msg_valid:std_LOGIC:='0';
  signal new_message:std_LOGIC:='0';
  signal last_msg:std_logic_vector(7 downto 0) := (others => '0');
-BEGIN
+ BEGIN
  
   -- Instantiate the Unit Under Test (UUT)
     uut: uart_mod PORT MAP (
@@ -77,7 +78,7 @@ begin
       last_msg_valid <= '1';
       new_message <= '0';
     elsif O_txRdy = '1' and I_txSig = '0' and last_msg_valid = '1' then
-      I_txData <= last_msg;
+      I_txData <= last_msg+32;
       I_txSig <= '1';
     elsif I_txSig = '1' and O_txRdy = '0' and last_msg_valid = '1' then
       I_txSig <= '0';
