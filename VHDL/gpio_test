@@ -71,12 +71,13 @@ COMPONENT uart_mod
    signal O_rxFrameError : std_logic;
 signal O_rxSig:std_logic :='0';
    --UART Clock period definitions
-   signal uart_ctr: integer range 0 to 8;
+   signal uart_ctr_x: integer range 0 to 8;
+	signal uart_ctr_y: integer range 0 to 8;
  signal last_msg_valid:std_LOGIC:='0';
  signal new_message:std_LOGIC:='0';
  signal last_msg:std_logic_vector(7 downto 0) := (others => '0');
 
-signal coord_ctr;
+signal coord_ctr: std_logic:='0';
 signal counter1: integer :=0;
 signal prescaler:std_LOGIC_VECTOR(15 downto 0);
 signal clk_1k:std_LOGIC;
@@ -1029,13 +1030,18 @@ begin
   
 
     if O_rxSig = '1' and last_msg_valid ='0' and new_message = '1' then
-      
+      coord_ctr<=not coord_ctr;
       last_msg_valid <= '1';
       new_message <= '0';
     elsif O_txRdy = '1' and I_txSig = '0' and last_msg_valid = '1' then
-      I_txData <= std_logic_vector(to_unsigned(path_dir_array(uart_ctr), I_txData'length));
+		if coord_ctr='1' then
+      I_txData <= std_logic_vector(to_unsigned(hit_array_x(uart_ctr_x), I_txData'length));
+		uart_ctr_x<=uart_ctr_x+1;
+		else
+		I_txData <= std_logic_vector(to_unsigned(hit_array_y(uart_ctr_y), I_txData'length));
+		uart_ctr_y<=uart_ctr_y+1;
+		end if;
 	
-		uart_ctr<=uart_ctr+1;
       I_txSig <= '1';
     elsif I_txSig = '1' and O_txRdy = '0' and last_msg_valid = '1' then
       I_txSig <= '0';
