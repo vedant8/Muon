@@ -541,7 +541,7 @@ begin
 if clk_1k'event and clk_1k='1' then 
    if s_flag='0' then
 
-		if s_1=X"3E8" then --1000 in hex
+		if s_1=X"3E8" then --1512 in hex
 			s_1<=(others => '0');
 			s_flag<='1';
 			fanout0<=input_array(0);
@@ -1027,21 +1027,18 @@ end process;
 transmission: process(clk, O_rxSig,track_flag_2)
 begin
   if rising_edge(clk) and track_flag_2='1' then
-  
-
     if O_rxSig = '1' and last_msg_valid ='0' and new_message = '1' then
-      coord_ctr<=not coord_ctr;
-      last_msg_valid <= '1';
+     -- coord_ctr<=not coord_ctr;
+	  last_msg_valid <= '1';
       new_message <= '0';
     elsif O_txRdy = '1' and I_txSig = '0' and last_msg_valid = '1' then
-		if coord_ctr='1' then
-      I_txData <= std_logic_vector(to_unsigned(hit_array_x(uart_ctr_x), I_txData'length));
+		--if coord_ctr='1' then
+      I_txData <= std_logic_vector(to_unsigned(hit_array_x(uart_ctr_x)*16+hit_array_y(uart_ctr_x), I_txData'length));
 		uart_ctr_x<=uart_ctr_x+1;
-		else
-		I_txData <= std_logic_vector(to_unsigned(hit_array_y(uart_ctr_y), I_txData'length));
-		uart_ctr_y<=uart_ctr_y+1;
-		end if;
-	
+		--else
+		--I_txData <= std_logic_vector(to_unsigned(hit_array_y(uart_ctr_y), I_txData'length));
+		--uart_ctr_y<=uart_ctr_y+1;
+		--end if;
       I_txSig <= '1';
     elsif I_txSig = '1' and O_txRdy = '0' and last_msg_valid = '1' then
       I_txSig <= '0';
